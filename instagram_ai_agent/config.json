@@ -3,7 +3,7 @@
   
     "sayed.developer"
   ],
-  "lookback_hours": 24,
+  "lookback_hours": 168,
   "email": {
     "from": "biniamtsiget@gmail.com",
     "to": "biniamtsiget@gmail.com",
@@ -12,7 +12,7 @@
     "subject": "Your Daily AI & Tech Digest"
   },
   "schedule": {
-    "send_time": "07:00"
+    "send_time": "23:03"
   },
   "groq": {
     "model": "llama-3.3-70b-versatile"
