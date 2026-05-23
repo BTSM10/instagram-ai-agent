@@ -1,9 +1,10 @@
 {
   "instagram_accounts": [
-  
-    "sayed.developer"
+    "mattmurphyai",
+    "kernx.ai",
+   "sayed.developer"
   ],
-  "lookback_hours": 168,
+  "lookback_hours": 24,
   "email": {
     "from": "biniamtsiget@gmail.com",
     "to": "biniamtsiget@gmail.com",
