@@ -1,0 +1,30 @@
+name: Daily Instagram Digest
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # 04:00 UTC = 07:00 Ethiopia time
+  workflow_dispatch:        # lets you trigger it manually from GitHub too
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r instagram_ai_agent/requirements.txt
+
+      - name: Run digest
+        working-directory: instagram_ai_agent
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+        run: python main.py --now

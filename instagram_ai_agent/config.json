@@ -1,0 +1,20 @@
+{
+  "instagram_accounts": [
+    "kernx.ai",
+    "mattmurphyai"
+  ],
+  "lookback_hours": 24,
+  "email": {
+    "from": "biniamtsiget@gmail.com",
+    "to": "biniamtsiget@gmail.com",
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "subject": "Your Daily AI & Tech Digest"
+  },
+  "schedule": {
+    "send_time": "07:00"
+  },
+  "groq": {
+    "model": "llama-3.3-70b-versatile"
+  }
+}
