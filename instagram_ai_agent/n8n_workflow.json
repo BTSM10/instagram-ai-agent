@@ -1,0 +1,189 @@
+{
+  "id": "instagram-ai-digest-001",
+  "name": "Instagram AI Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 5 * * *"
+            }
+          ]
+        }
+      },
+      "id": "node-01-schedule",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~instagram-profile-scraper/runs",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "YOUR_APIFY_TOKEN_HERE"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"usernames\": [\"mattmurphyai\", \"kernx.ai\", \"sayed.developer\"],\n  \"resultsLimit\": 5\n}",
+        "options": {}
+      },
+      "id": "node-02-apify-start",
+      "name": "Start Apify Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "amount": 45,
+        "unit": "seconds",
+        "resume": "timeInterval"
+      },
+      "id": "node-03-wait",
+      "name": "Wait 45s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.apify.com/v2/datasets/{{ $('Start Apify Run').first().json.data.defaultDatasetId }}/items",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "YOUR_APIFY_TOKEN_HERE"
+            },
+            {
+              "name": "clean",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-04-apify-fetch",
+      "name": "Fetch Dataset",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\n\nconst systemPrompt = `You are an expert AI journalist creating a daily educational digest from Instagram posts by AI creators. For every tool, model, concept, framework, or technique mentioned:\\n1. Breaking It Down: define it clearly in plain English\\n2. How it works: brief technical explanation\\n3. Why it matters: real-world relevance\\n4. Concept Glossary: bullet list of every term mentioned\\n5. Trends & Patterns: what themes are emerging\\n6. Action Items: 2-3 things an AI practitioner should do or explore\\nBe thorough, educational, and insightful. Write in a newsletter style.`;\n\nif (items.length === 0) {\n  return [{ json: { groqPayload: JSON.stringify({ model: 'llama-3.3-70b-versatile', temperature: 0.5, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'No posts found today.' }] }) } }];\n}\n\nconst posts = items.map(item => {\n  const d = item.json;\n  const caption = (d.caption || 'No caption').slice(0, 600);\n  return [`@${d.ownerUsername || 'unknown'}`, `Caption: ${caption}`, `Date: ${d.timestamp || 'unknown'}`, `Likes: ${d.likesCount || 0} | Comments: ${d.commentsCount || 0}`].join('\\n');\n}).join('\\n\\n---\\n\\n');\n\nconst groqPayload = JSON.stringify({\n  model: 'llama-3.3-70b-versatile',\n  temperature: 0.5,\n  messages: [\n    { role: 'system', content: systemPrompt },\n    { role: 'user', content: `Here are today's ${items.length} Instagram posts. Write the full digest:\\n\\n${posts}` }\n  ]\n});\n\nreturn [{ json: { postCount: items.length, groqPayload } }];"
+      },
+      "id": "node-05-format",
+      "name": "Format Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.groqPayload }}",
+        "options": {}
+      },
+      "id": "node-06-groq",
+      "name": "Groq Summarize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "biniamtsiget@gmail.com",
+        "subject": "=Your Daily AI Digest — {{ $now.format('MMMM D, YYYY') }}",
+        "emailType": "html",
+        "message": "=<html>\n<head>\n  <style>\n    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 700px; margin: 40px auto; color: #1a1a1a; line-height: 1.7; }\n    h2 { color: #0d0d0d; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; }\n    h3 { color: #333; margin-top: 28px; }\n    hr { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }\n    .footer { font-size: 12px; color: #999; margin-top: 40px; }\n  </style>\n</head>\n<body>\n  <h2>Your Daily AI & Tech Digest</h2>\n  <p style=\"color:#666;\">{{ $now.format('dddd, MMMM D YYYY') }}</p>\n  <hr/>\n  <div style=\"white-space: pre-wrap;\">{{ $('Groq Summarize').first().json.choices[0].message.content }}</div>\n  <hr/>\n  <p class=\"footer\">Generated by your n8n Instagram AI Agent</p>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "node-07-gmail",
+      "name": "Send Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1560, 300]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [{ "node": "Start Apify Run", "type": "main", "index": 0 }]
+      ]
+    },
+    "Start Apify Run": {
+      "main": [
+        [{ "node": "Wait 45s", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wait 45s": {
+      "main": [
+        [{ "node": "Fetch Dataset", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Dataset": {
+      "main": [
+        [{ "node": "Format Posts", "type": "main", "index": 0 }]
+      ]
+    },
+    "Format Posts": {
+      "main": [
+        [{ "node": "Groq Summarize", "type": "main", "index": 0 }]
+      ]
+    },
+    "Groq Summarize": {
+      "main": [
+        [{ "node": "Send Gmail", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
